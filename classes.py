@@ -2,6 +2,60 @@ from collections import UserDict
 # from typing import *
 
 
+class ValidPhoneException(Exception):
+    def __init__(self, number_for_validation: str) -> None:
+        self.message = f'Wrong format of {number_for_validation}.'
+        super().__init__(self.message)
+
+
+class ValidEmailException(Exception):
+    def __init__(self, email_for_validation: str) -> None:
+        self.message = f'Wrong format of {email_for_validation}.'
+        super().__init__(self.message)
+
+
+class ValidBirthDateException(Exception):
+    def __init__(self, birth_date_for_validation: str) -> None:
+        self.message = f'Wrong format of {birth_date_for_validation}.'
+        super().__init__(self.message)
+
+
+class ValidBirthDateFormatException(Exception):
+    def __init__(self, birth_date_for_verification: str) -> None:
+        self.message = f'Birth date {birth_date_for_verification} is not valid.'
+        super().__init__(self.message)
+
+
+class PhoneExistException(Exception):
+    def __init__(self, number_for_verification: str) -> None:
+        self.message = f'Number {number_for_verification} already exists.'
+        super().__init__(self.message)
+
+
+class EmailExistException(Exception):
+    def __init__(self, email_for_verification: str) -> None:
+        self.message = f'Email {email_for_verification} already exists.'
+        super().__init__(self.message)
+
+
+class NameNotExistException(Exception):
+    def __init__(self, name_for_verification: str) -> None:
+        self.message = f'Name {name_for_verification} is not exist.'
+        super().__init__(self.message)
+
+
+class PhoneNotExistException(Exception):
+    def __init__(self, number_for_verification: str) -> None:
+        self.message = f'Number {number_for_verification} already exists.'
+        super().__init__(self.message)
+
+
+class EmailNotExistException(Exception):
+    def __init__(self, email_for_verification: str) -> None:
+        self.message = f'Email {email_for_verification} already exists.'
+        super().__init__(self.message)
+
+
 class Field:
     def value_of(self):
         raise NotImplementedError
@@ -56,10 +110,15 @@ class Email(Field):
 
 class BirthDay(Field):
     def __init__(self, birth_date: str):
-        self.birth_date = birth_date
+        _value = self.check_value(birth_date)
+        self.birth_date = _value
 
     def value_of(self):
         return self.birth_date
+
+    def check_value(self, birthday):
+        if birthday:
+            return birthday
 
 
 class Status(Field):
