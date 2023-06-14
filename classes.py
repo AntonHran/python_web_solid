@@ -87,12 +87,3 @@ class AddressBook(UserDict):
         super().__init__()
         self.data[record.name.value_of()] = record
 
-
-lst = [2, 6, 9, 10, 6, 9, 2, 11, 12, 45, 2]
-# origin = [el for el in lst if el not in lst.remove(el) and lst.remove(el)]
-origin = []
-for el in lst:
-    lst.remove(el)
-    if el not in lst:
-        origin.append(el)
-print(origin)
