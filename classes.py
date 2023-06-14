@@ -1,4 +1,5 @@
 from collections import UserDict
+# from typing import *
 
 
 class Field:
@@ -29,18 +30,28 @@ class Name(Field):
 
 class Phone(Field):
     def __init__(self, phone_number: str):
-        self.phone_number = [phone_number]
+        _value = self.check_value(phone_number)
+        self.phone_number = [_value]
 
     def value_of(self):
         return self.phone_number
 
+    def check_value(self, phone_num):
+        if phone_num:
+            return phone_num
+
 
 class Email(Field):
     def __init__(self, email: str):
-        self.email = email
+        _value = self.check_value(email)
+        self.email = _value
 
     def value_of(self):
         return self.email
+
+    def check_value(self, email: str) -> str:
+        if email:
+            return email
 
 
 class BirthDay(Field):
@@ -52,7 +63,7 @@ class BirthDay(Field):
 
 
 class Status(Field):
-    def __init__(self, status):
+    def __init__(self, status: str):
         self.status = status
 
     def value_of(self):
@@ -60,7 +71,7 @@ class Status(Field):
 
 
 class Note(Field):
-    def __init__(self, note):
+    def __init__(self, note: str):
         self.note = note
 
     def value_of(self):
@@ -68,7 +79,8 @@ class Note(Field):
 
 
 class Record:
-    def __init__(self, name: Field, phone: Field | None, email: Field | None, bd: Field | None, status: Field | None, note: Field | None):
+    def __init__(self, name: Field, phone: Field | None, email: Field | None, bd: Field | None,
+                 status: Field | None, note: Field | None):
         self.name = name
         self.phone = phone
         self.email = email
@@ -83,7 +95,8 @@ class Record:
 
 
 class AddressBook(UserDict):
-    def __init__(self, record: Record):
-        super().__init__()
+    # def __init__(self, record: Record):
+    # super().__init__()
+    # self.data[record.name.value_of()] = record
+    def add_record(self, record: Record):
         self.data[record.name.value_of()] = record
-
