@@ -1,5 +1,21 @@
 from collections import UserDict
+import re
 # from typing import *
+
+UKR_MOBILE_PHONE_CODES = ['095', '099', '050', '063', '066', '067', '077', '0800', '045', '046', '032',
+                          '044', '048', '068', '097', '098', '091', '092', '094', ]
+
+
+class NameNotFilledException(Exception):
+    def __init__(self, message='Name can not be missing/empty.') -> None:
+        self.message = message
+        super().__init__(self.message)
+
+
+class PhoneNumberNotFilledException(Exception):
+    def __init__(self, message='You can not add empty value as a phone number!!!') -> None:
+        self.message = message
+        super().__init__(self.message)
 
 
 class ValidPhoneException(Exception):
@@ -60,68 +76,102 @@ class Field:
     def value_of(self):
         raise NotImplementedError
 
-    def check_value(self, value):
+    def _check_value(self, value):
+        raise NotImplementedError
+
+
+class UnnecessaryField:
+    def value_of(self):
         raise NotImplementedError
 
 
 class Name(Field):
     def __init__(self, name: str):
-        _value = self.check_value(name)
-        self.__name = _value
+        _value = self._check_value(name)
+        if _value:
+            self.__name = _value
 
-    def value_of(self):
+    def value_of(self) -> str:
         return self.__name
 
-    def set_name(self, newname):
-        self.__name = newname
+    def set_name(self, newname: str):
+        _value = self._check_value(newname)
+        if _value:
+            self.__name = _value
 
-    def check_value(self, name):
-        if name:
+    def _check_value(self, name: str) -> str | Exception:
+        if name and isinstance(name, str):
             return name
         else:
-            raise ValueError
+            raise NameNotFilledException
 
 
 class Phone(Field):
-    def __init__(self, phone_number: str):
-        _value = self.check_value(phone_number)
-        self.phone_number = [_value]
+    def __init__(self, phone_number: str | None) -> None:
+        _value = self._check_value(phone_number)
+        self.phone_number = []
+        self.phone_number.append(_value)
 
-    def value_of(self):
+    def value_of(self) -> list[str]:
         return self.phone_number
 
-    def check_value(self, phone_num):
+    def _check_value(self, phone_num) -> str | None | Exception:
         if phone_num:
-            return phone_num
+            phone_num = re.sub(r'[+\-() ]', '', phone_num)
+            if re.fullmatch(r'^([0-9]){6,14}[0-9]$', phone_num):
+                for inner_code in UKR_MOBILE_PHONE_CODES:
+                    if phone_num.startswith(inner_code):
+                        return f'+38{phone_num}'
+            else:
+                raise ValidPhoneException(phone_num)
+        return None
+
+    def add_phone_number(self, phone_number: str):
+        _number = self._check_value(phone_number)
+        if _number and _number not in self.phone_number:
+            self.phone_number.append(_number)
+        elif not _number:
+            raise PhoneNumberNotFilledException
+        else:
+            raise PhoneExistException(_number)
+
+    def __str__(self) -> str:
+        return f'Info: telephone number(-s): {", ".join(self.phone_number)}'
 
 
 class Email(Field):
-    def __init__(self, email: str):
-        _value = self.check_value(email)
+    def __init__(self, email: str | None):
+        _value = self._check_value(email)
         self.email = _value
 
     def value_of(self):
         return self.email
 
-    def check_value(self, email: str) -> str:
-        if email:
+    def _check_value(self, email: str) -> str | None | Exception:
+        if email and re.match(r"([a-zA-Z.]+\w+\.?)+(@\w{2,}\.)(\w{2,})", email):
             return email
+        elif not email:
+            return None
+        else:
+            raise ValidEmailException
 
 
 class BirthDay(Field):
-    def __init__(self, birth_date: str):
-        _value = self.check_value(birth_date)
+    def __init__(self, birth_date: str | None):
+        _value = self._check_value(birth_date)
         self.birth_date = _value
 
     def value_of(self):
         return self.birth_date
 
-    def check_value(self, birthday):
+    def _check_value(self, birthday):
         if birthday:
             return birthday
+        else:
+            raise ValidBirthDateException
 
 
-class Status(Field):
+class Status(UnnecessaryField):
     def __init__(self, status: str):
         self.status = status
 
@@ -129,7 +179,7 @@ class Status(Field):
         return self.status
 
 
-class Note(Field):
+class Note(UnnecessaryField):
     def __init__(self, note: str):
         self.note = note
 
@@ -138,8 +188,8 @@ class Note(Field):
 
 
 class Record:
-    def __init__(self, name: Field, phone: Field | None, email: Field | None, bd: Field | None,
-                 status: Field | None, note: Field | None):
+    def __init__(self, name: Field, phone: Field | None = None, email: Field | None = None,
+                 bd: Field | None = None, status: Field | None = None, note: UnnecessaryField | None = None):
         self.name = name
         self.phone = phone
         self.email = email
@@ -159,3 +209,16 @@ class AddressBook(UserDict):
     # self.data[record.name.value_of()] = record
     def add_record(self, record: Record):
         self.data[record.name.value_of()] = record
+
+
+p = Name('I')
+p.set_name('OK')
+print(p.value_of())
+# p1 = Name('')
+
+number = Phone(None)
+print(number.value_of())
+eml = Email(None)
+print(eml.value_of())
+rec = Record(p, number, eml)
+print(rec.get_record())
