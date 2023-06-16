@@ -1,5 +1,6 @@
-from collections import UserDict
+from collections import UserDict  # , Counter
 import re
+from abc import ABC, abstractmethod
 # from typing import *
 
 UKR_MOBILE_PHONE_CODES = ['095', '099', '050', '063', '066', '067', '077', '0800', '045', '046', '032',
@@ -72,15 +73,22 @@ class EmailNotExistException(Exception):
         super().__init__(self.message)
 
 
-class Field:
-    def value_of(self):
+class Field(ABC):
+    @abstractmethod
+    def __getitem__(self):
         raise NotImplementedError
 
+    @abstractmethod
+    def __setitem__(self, val):
+        raise NotImplementedError
+
+    @abstractmethod
     def _check_value(self, value):
         raise NotImplementedError
 
 
-class UnnecessaryField:
+class UnnecessaryField(ABC):
+    @abstractmethod
     def value_of(self):
         raise NotImplementedError
 
@@ -91,10 +99,10 @@ class Name(Field):
         if _value:
             self.__name = _value
 
-    def value_of(self) -> str:
+    def __getitem__(self) -> str:
         return self.__name
 
-    def set_name(self, newname: str):
+    def __setitem__(self, newname: str):
         _value = self._check_value(newname)
         if _value:
             self.__name = _value
@@ -107,12 +115,12 @@ class Name(Field):
 
 
 class Phone(Field):
-    def __init__(self, phone_number: str | None) -> None:
+    def __init__(self, phone_number: str) -> None:
         _value = self._check_value(phone_number)
         self.phone_number = []
         self.phone_number.append(_value)
 
-    def value_of(self) -> list[str]:
+    def __getitem__(self) -> list[str]:
         return self.phone_number
 
     def _check_value(self, phone_num) -> str | None | Exception:
@@ -126,7 +134,7 @@ class Phone(Field):
                 raise ValidPhoneException(phone_num)
         return None
 
-    def add_phone_number(self, phone_number: str):
+    def __setitem__(self, phone_number: str):
         _number = self._check_value(phone_number)
         if _number and _number not in self.phone_number:
             self.phone_number.append(_number)
@@ -140,12 +148,15 @@ class Phone(Field):
 
 
 class Email(Field):
-    def __init__(self, email: str | None):
+    def __init__(self, email: str | None = None):
         _value = self._check_value(email)
         self.email = _value
 
-    def value_of(self):
+    def __getitem__(self):
         return self.email
+
+    def __setitem__(self, new_email: str) -> None:
+        self.email = self._check_value(new_email)
 
     def _check_value(self, email: str) -> str | None | Exception:
         if email and re.match(r"([a-zA-Z.]+\w+\.?)+(@\w{2,}\.)(\w{2,})", email):
@@ -157,26 +168,41 @@ class Email(Field):
 
 
 class BirthDay(Field):
-    def __init__(self, birth_date: str | None):
+    def __init__(self, birth_date: str):
         _value = self._check_value(birth_date)
         self.birth_date = _value
 
-    def value_of(self):
+    def __getitem__(self):
         return self.birth_date
+
+    def __setitem__(self, val):
+        ...
 
     def _check_value(self, birthday):
         if birthday:
             return birthday
+        elif not birthday:
+            return None
         else:
             raise ValidBirthDateException
 
 
-class Status(UnnecessaryField):
+class Status(Field):
     def __init__(self, status: str):
-        self.status = status
+        self.statuses = ['Friend', 'Family', 'Co-Worker', 'Special']
+        _status = self._check_value(status)
+        self.status = _status
 
-    def value_of(self):
+    def __getitem__(self):
         return self.status
+
+    def __setitem__(self, new_status: str) -> None:
+        self.status = self._check_value(new_status)
+
+    def _check_value(self, status):
+        if status in self.statuses:
+            return status
+        return None
 
 
 class Note(UnnecessaryField):
@@ -188,37 +214,65 @@ class Note(UnnecessaryField):
 
 
 class Record:
-    def __init__(self, name: Field, phone: Field | None = None, email: Field | None = None,
-                 bd: Field | None = None, status: Field | None = None, note: UnnecessaryField | None = None):
+    def __init__(self, name: Field, phone: Field = None, email: Field = None,
+                 bd: Field = None, status: Field = None, note: UnnecessaryField = None):
         self.name = name
-        self.phone = phone
-        self.email = email
-        self.bd = bd
-        self.status = status
-        self.note = note
+        self.phone = Phone('') if not phone else phone
+        self.email = Email() if not email else email
+        self.bd = BirthDay('') if not bd else bd
+        self.status = Status('') if not status else status
+        self.note = Note('') if not note else note
+        # self.lst = [self.phone, self.email, self.bd, self.status, self.note]
 
     def get_record(self):
-        return f'name: {self.name.value_of()}, phone: {self.phone.value_of()}, ' \
-               f'email: {self.email.value_of()}, birthday: {self.bd.value_of()}, ' \
-               f'status: {self.status.value_of()}, note: {self.note.value_of()}.'
+        return f'name: {self.name.__getitem__()}, phone: {self.phone.__getitem__()}, ' \
+               f'email: {self.email.__getitem__()}, birthday: {self.bd.__getitem__()}, ' \
+               f'status: {self.status.__getitem__()}, note: {self.note.value_of()}.'
 
 
 class AddressBook(UserDict):
-    # def __init__(self, record: Record):
-    # super().__init__()
-    # self.data[record.name.value_of()] = record
     def add_record(self, record: Record):
-        self.data[record.name.value_of()] = record
+        self.data[record.name.__getitem__()] = record
 
 
 p = Name('I')
-p.set_name('OK')
-print(p.value_of())
+p.__setitem__('OK')
+print(p.__getitem__())
 # p1 = Name('')
 
-number = Phone(None)
-print(number.value_of())
-eml = Email(None)
-print(eml.value_of())
-rec = Record(p, number, eml)
+number = Phone('')
+print(number.__getitem__())
+eml = Email('')
+print(eml.__getitem__())
+rec_ = Record(Name('Anton'), bd=BirthDay('1990-01-06'), status=Status('Friend'), note=Note('myself'))
+print(rec_.get_record())
+rec = Record(p)
 print(rec.get_record())
+rec_.email.__setitem__('ah.hr@gmail.com')
+print(rec_.email.__getitem__())
+print(rec_.get_record())
+rec.status.__setitem__('Special')
+print(rec.get_record())
+
+'''lst = [2, 3, 4, 5, 2, 6, 3, 9, 10, 11, 2]
+counts = Counter(lst)
+origin = [key for key in counts if counts[key] == 1]
+print(origin)
+
+orig = []
+for el in lst:
+    copy = [*lst]
+    copy.remove(el)
+    if el not in copy:
+        orig.append(el)
+print(orig)
+
+org = []
+for el in lst:
+    k = 0
+    for el_1 in lst:
+        if el == el_1:
+            k += 1
+    if k == 1:
+        org.append(el)
+print(org)'''
