@@ -2,7 +2,9 @@ from collections import UserDict  # , Counter
 import re
 from abc import ABC, abstractmethod
 import datetime
-# from typing import *
+# from itertools import islice
+
+from typing import Any
 
 UKR_MOBILE_PHONE_CODES = ['095', '099', '050', '063', '066', '067', '077', '0800', '045', '046', '032',
                           '044', '048', '068', '097', '098', '091', '092', '094', ]
@@ -74,9 +76,27 @@ class EmailNotExistException(Exception):
         super().__init__(self.message)
 
 
+class BirthdaysNotExistException(Exception):
+    def __init__(self, message: str = 'Birthday does not exist for this contact.') -> None:
+        self.message = message
+        super().__init__(self.message)
+
+
 class StatusNotExistException(Exception):
     def __init__(self, status_for_verification: str) -> None:
         self.message = f'Status {status_for_verification} does not exist.'
+        super().__init__(self.message)
+
+
+class RecordExistException(Exception):
+    def __init__(self, record_for_verification: str) -> None:
+        self.message = f'Record with a such name {record_for_verification} already exists.'
+        super().__init__(self.message)
+
+
+class RecordNotExistException(Exception):
+    def __init__(self, record_for_verification: str) -> None:
+        self.message = f'Record with a such name {record_for_verification} does not exist.'
         super().__init__(self.message)
 
 
@@ -127,13 +147,13 @@ class Name(Field):
 
 class Phone(Field):
     def __init__(self, phone_number: str) -> None:
-        self.phone_number = []
+        self.__phone_number = []
         _value = self._check_value(phone_number)
         if _value:
-            self.phone_number.append(_value)
+            self.__phone_number.append(_value)
 
     def get_value(self) -> list[str]:
-        return self.phone_number
+        return self.__phone_number
 
     def _check_value(self, phone_num) -> str | None | Exception:
         if phone_num:
@@ -148,27 +168,27 @@ class Phone(Field):
 
     def set_value(self, phone_number: str) -> None:
         _number = self._check_value(phone_number)
-        if _number and _number not in self.phone_number:
-            self.phone_number.append(_number)
+        if _number and _number not in self.__phone_number:
+            self.__phone_number.append(_number)
         elif not _number:
             raise PhoneNumberNotFilledException
         else:
             raise PhoneExistException(_number)
 
     def __str__(self) -> str:
-        return f'Info: telephone number(-s): {", ".join(self.phone_number)}'
+        return f'Info: telephone number(-s): {", ".join(self.__phone_number)}'
 
 
 class Email(Field):
     def __init__(self, email: str = None) -> None:
         _value = self._check_value(email)
-        self.email = _value
+        self.__email = _value
 
     def get_value(self) -> str:
-        return self.email
+        return self.__email
 
     def set_value(self, new_email: str) -> None:
-        self.email = self._check_value(new_email)
+        self.__email = self._check_value(new_email)
 
     def _check_value(self, email: str) -> str | None | Exception:
         if email and re.match(r"([a-zA-Z.]+\w+\.?)+(@\w{2,}\.)(\w{2,})", email):
@@ -182,13 +202,13 @@ class Email(Field):
 class BirthDay(Field):
     def __init__(self, birth_date: str = None):
         _value = self._check_value(birth_date)
-        self.birth_date = _value
+        self.__birth_date = _value
 
     def get_value(self) -> datetime.date:
-        return self.birth_date
+        return self.__birth_date
 
     def set_value(self, birth_date_: str) -> None:
-        self.birth_date = self._check_value(val)
+        self.__birth_date = self._check_value(val)
 
     def _check_value(self, birthday: str) -> datetime.date | None | Exception:
         if birthday:
@@ -199,18 +219,31 @@ class BirthDay(Field):
         else:
             raise ValidBirthDateException
 
+    def days_to_birthday(self) -> int:
+        if self.__birth_date:
+            current_date: datetime.date = datetime.date.today()
+            birthday: datetime.date = datetime.date(year=current_date.year, month=self.__birth_date.month,
+                                                    day=self.__birth_date.day)
+            diff: int = (birthday - current_date).days
+            if diff < 0:
+                birthday = datetime.date(year=current_date.year + 1, month=self.__birth_date.month,
+                                         day=self.__birth_date.day)
+                diff = (birthday - current_date).days
+            return diff
+        raise BirthdaysNotExistException
+
 
 class Status(Field):
     def __init__(self, status: str = None):
         self.statuses = ['Friend', 'Family', 'Co-Worker', 'Special', None]
         _status = self._check_value(status)
-        self.status = _status
+        self.__status = _status
 
     def get_value(self) -> str:
-        return self.status
+        return self.__status
 
     def set_value(self, new_status: str) -> None:
-        self.status = self._check_value(new_status)
+        self.__status = self._check_value(new_status)
 
     def _check_value(self, status):
         if status in self.statuses:
@@ -220,13 +253,16 @@ class Status(Field):
 
 class Note(UnnecessaryField):
     def __init__(self, note: str = None):
-        self.note = note
+        self._note = note
 
     def get_value(self) -> str:
-        return self.note
+        return self._note
 
-    def set_value(self, note: str):
-        self.note = note
+    def set_value(self, new_note: str):
+        self._note = new_note
+
+    def __str__(self):
+        return self._note
 
 
 class Record:
@@ -244,19 +280,53 @@ class Record:
                f'email: {self.email.get_value()}, birthday: {self.bd.get_value()}, ' \
                f'status: {self.status.get_value()}, note: {self.note.get_value()}.'
 
+    def get_fields(self) -> dict:
+        data = vars(self)
+        d: dict = {name: value.get_value() for (name, value) in data.items()}
+        return d
+
+    @staticmethod
+    def parser(element: Any) -> str:
+        if isinstance(element, list):
+            return ' '.join(element)
+        elif isinstance(element, datetime.date):
+            return element.strftime('%A %d %B %Y')
+        elif isinstance(element, str):
+            return element
+
+    def search(self, parameter: str) -> str:
+        data = self.get_fields()
+        for value in data.values():
+            if value and re.search(parameter, self.parser(value), flags=re.I):
+                return value
+
 
 class AddressBook(UserDict):
+    start: int = 0
+
     def add_record(self, record: Record) -> None:
+        if record.name.get_value() in self.data:
+            raise RecordExistException(record.name.get_value())
         self.data[record.name.get_value()] = record
 
     def delete_record(self, name: str) -> None:
+        if name not in self.data:
+            raise RecordNotExistException(name)
         del self.data[name]
 
-    def iter(self):
-        ...
+    def iterator(self, page: int = 2):
+        while True:
+            data = list(self.data.values())[self.start: self.start+page]
+            if not data:
+                break
+            yield data
+            self.start += page
 
-    def search(self):
-        ...
+    def search(self, parameter: str):
+        for record in self.data.values():
+            if record.search(parameter):
+                return record
+        return 'There are not matches...'
 
     def __str__(self) -> dict:
         return self.data
@@ -267,31 +337,44 @@ contacts = AddressBook()
 p = Name('I')
 p.set_value('OK')
 print(p.get_value())
+n = Note('ok_')
+print(n)
 # p1 = Name('')
 
 number = Phone('')
 print(number.get_value())
-eml = Email('')
+eml = Email()
 print(eml.get_value())
 rec_ = Record(Name('Anton'), bd=BirthDay('1990-01-06'), status=Status('Friend'), note=Note('myself'))
-print(rec_.__str__(), 1)
+print(rec_, 1)
+print(rec_.search('ant'))
+print('-' * 120)
+
 rec_.note.set_value('it is me)')
-print(rec_.__str__(), 1)
+print(rec_, 1)
 rec = Record(p)
-print(rec.__str__(), 2)
+print(rec, 2)
 rec.note.set_value('test')
-print(rec.__str__(), 2)
+print(rec, 2)
 rec_.email.set_value('ah.hr@gmail.com')
 print(rec_.email.get_value())
-print(rec_.__str__(), 1)
+print(rec_, 1)
 rec.status.set_value('Special')
-print(rec.__str__(), 2, '\n')
+print(rec, 2, '\n')
 
 contacts.add_record(rec)
 contacts.add_record(rec_)
+print(contacts['Anton'].bd.days_to_birthday())
+# print(contacts['OK'].bd.days_to_birthday())
 # contacts.delete_record('OK')
-for key, val in contacts.__str__().items():
-    print(key, val.__str__())
+for key, val in contacts.items():
+    print(key, '|', val)
+print()
+for el in contacts.iterator():
+    print(*el)
+
+print('-' * 120)
+print(contacts.search('tes'))
 
 '''lst = [2, 3, 4, 5, 2, 6, 3, 9, 10, 11, 2]
 counts = Counter(lst)
