@@ -6,8 +6,8 @@ def main():
     instructions()
     while True:
         text: str = input('\nEnter your command: ')
-        command, argument = command_parser(text)
         try:
+            command, argument = command_parser(text)
             func = handler(command)
             func(argument) if argument else func()
         except (TypeError, KeyError):
