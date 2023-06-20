@@ -23,19 +23,19 @@ class PhoneNumberNotFilledException(Exception):
 
 class ValidPhoneException(Exception):
     def __init__(self, number_for_validation: str) -> None:
-        self.message = f'Wrong format of {number_for_validation}.'
+        self.message = f'Wrong format - {number_for_validation} - of a phone number.'
         super().__init__(self.message)
 
 
 class ValidEmailException(Exception):
     def __init__(self, email_for_validation: str) -> None:
-        self.message = f'Wrong format of {email_for_validation}.'
+        self.message = f'Wrong format - {email_for_validation} - of an email.'
         super().__init__(self.message)
 
 
 class ValidBirthDateException(Exception):
     def __init__(self, birth_date_for_validation: str) -> None:
-        self.message = f'Wrong format of {birth_date_for_validation}.'
+        self.message = f'Wrong format - {birth_date_for_validation} - of a birthdate.'
         super().__init__(self.message)
 
 
@@ -119,8 +119,9 @@ class UnnecessaryField(ABC):
 
 class Name(Field):
     def __init__(self, name: str):
-        self.__name = None
-        self.set_value(name)
+        _name = self._check_value(name)
+        if _name:
+            self.__name = _name
 
     def get_value(self) -> str:
         return self.__name
@@ -339,8 +340,7 @@ p = Name('I')
 p.set_value('OK')
 print(p.get_value())
 n = Note('ok_')
-print(n.give_info())
-# p1 = Name('')
+p1 = Name('')
 
 number = Phone('')
 print(number.get_value())
