@@ -51,10 +51,10 @@ class PhoneExistException(Exception):
         super().__init__(self.message)
 
 
-'''class EmailExistException(Exception):
-    def __init__(self, email_for_verification: str) -> None:
-        self.message = f'Email {email_for_verification} already exists.'
-        super().__init__(self.message)'''
+class SearchException(Exception):
+    def __init__(self, arg_for_search: str) -> None:
+        self.message = f'There are not matches with {arg_for_search}...'
+        super().__init__(self.message)
 
 
 class NameNotExistException(Exception):
@@ -67,12 +67,6 @@ class PhoneNotExistException(Exception):
     def __init__(self, number_for_verification: str) -> None:
         self.message = f'Number {number_for_verification} does not exist.'
         super().__init__(self.message)
-
-
-'''class EmailNotExistException(Exception):
-    def __init__(self, email_for_verification: str) -> None:
-        self.message = f'Email {email_for_verification} does not exist.'
-        super().__init__(self.message)'''
 
 
 class BirthdayNotExistException(Exception):
@@ -112,10 +106,6 @@ class Field(ABC):
     def _check_value(self, value):
         raise NotImplementedError
 
-    @abstractmethod
-    def give_info(self):
-        raise NotImplementedError
-
 
 class UnnecessaryField(ABC):
     @abstractmethod
@@ -124,10 +114,6 @@ class UnnecessaryField(ABC):
 
     @abstractmethod
     def set_value(self, value):
-        raise NotImplementedError
-
-    @abstractmethod
-    def give_info(self):
         raise NotImplementedError
 
 
@@ -149,11 +135,6 @@ class Name(Field):
             return name
         else:
             raise NameNotFilledException
-
-    def give_info(self) -> str:
-        return '''\n\tA name of a contact.
-        The field name cannot be empty.
-        To change a name of some contact enter: change name <name of contact>'''
 
 
 class Phone(Field):
@@ -187,19 +168,10 @@ class Phone(Field):
             raise PhoneExistException(_number)
 
     def delete_phone_number(self, phone_number):
-        if phone_number in self.__phone_number:
-            self.__phone_number.remove(phone_number)
+        number_find = [num for num in self.__phone_number if re.search(phone_number, num)]
+        if number_find:
+            self.__phone_number.remove(*number_find)
         raise PhoneNotExistException(phone_number)
-
-    def give_info(self):
-        return '''\n\tA phone number of a contact.
-        All phone numbers should be added according to a phone pattern: +<code of a country>XXXXXXXXX or 
-        <operator code>XXXXXXX
-        All phone numbers are saved according to the pattern: +<code of a country>(XX)XXXXXXX
-        
-        To add a new phone number to some contact enter: add phone <name of a contact>
-        To change a phone number of some contact enter: change phone <name of a contact>
-        To delete a phone number of some contact enter: delete phone <name os a contact>'''
 
 
 class Email(Field):
@@ -220,11 +192,6 @@ class Email(Field):
             return None
         else:
             raise ValidEmailException(email)
-
-    def give_info(self):
-        return '''\n\tAn email of a contact.
-        All emails should be written according to a valid format of your type of email.
-        To change/add (if this field is empty) an email of some contact enter: change email <name of a contact>'''
 
 
 class BirthDay(Field):
@@ -264,13 +231,6 @@ class BirthDay(Field):
             return diff
         raise BirthdayNotExistException
 
-    def give_info(self):
-        return'''\n\tA birthday of a contact.
-        All dates of the birthday should be written according to the pattern: YYYY-MM-DD
-        To change/add (if this field is empty) a date of birth of some contact enter: 
-        change bd <name of a contact>
-        To show how many days left to someone birthday enter: days to bd <name of a contact>'''
-
 
 class Status(Field):
     def __init__(self, status: str = None):
@@ -289,12 +249,6 @@ class Status(Field):
             return status
         raise StatusNotExistException(status)
 
-    def give_info(self):
-        return '''\n\tA status of a contact.
-        You can add one of the following statuses to your contact: Friend, Family, Co-Worker, Special.
-        Or it can be empty.
-        To add/change a status of some contact enter: change status <name of a contact>'''
-
 
 class Note(UnnecessaryField):
     def __init__(self, note: str = None):
@@ -305,11 +259,6 @@ class Note(UnnecessaryField):
 
     def set_value(self, new_note: str):
         self._note = new_note
-
-    def give_info(self):
-        return '''\n\tA note of a contact.
-        To add/change a notes of some contact enter: change note <name of a contact>
-        Or it can be empty'''
 
 
 class Record:
@@ -325,12 +274,12 @@ class Record:
     def __str__(self) -> str:
         return ', '.join([f'{name}: {value.get_value()}' for name, value in vars(self).items()])
 
-    def get_fields(self) -> dict:
+    def _get_fields(self) -> dict:
         fields_dict: dict = {name: value.get_value() for (name, value) in vars(self).items()}
         return fields_dict
 
     @staticmethod
-    def parser(element: Any) -> str:
+    def _parser(element: Any) -> str:
         if isinstance(element, list):
             return ' '.join(element)
         elif isinstance(element, datetime.date):
@@ -339,33 +288,13 @@ class Record:
             return element
 
     def search(self, parameter: str) -> str:
-        data = self.get_fields()
+        data = self._get_fields()
         for value in data.values():
-            if value and re.search(parameter, self.parser(value), flags=re.I):
+            if value and re.search(parameter, self._parser(value), flags=re.I):
                 return value
-
-    def get_all_info(self):
-        return [info.give_info() for info in vars(self).values()]
 
 
 class AddressBook(UserDict):
-    start: int = 0
-
-    def info(self):
-        head = '''\n\tGeneral commands for all written contacts:
-        To create a new contact enter: add contact <name of a new contact>
-        To delete some contact enter: delete contact <name of a contact>
-        To search a contact by a name or a phone or an email a date of birth or a status either a note, 
-        using a full value of the field name or only a part of it, enter: search <keyword>
-        To show all notices of an address book enter: show all'''
-        foot = '''\n\tTo read all commands once again enter: help
-    To exit and shut down the CUI assistant enter: good bye or close or exit
-    Names, phone numbers, emails and other parameters have to be written without brackets <...>'''
-        info_record = Record(Name('INFO'))
-        help_ = info_record.get_all_info()
-        help_.insert(0, head)
-        help_.append(foot)
-        return help_
 
     def add_record(self, record: Record) -> None:
         if record.name.get_value() in self.data:
@@ -373,25 +302,27 @@ class AddressBook(UserDict):
         self.data[record.name.get_value()] = record
 
     def delete_record(self, name: str) -> None:
+        name = self.search_by_name(name)
         if name not in self.data:
             raise RecordNotExistException(name)
         del self.data[name]
 
-    def iterator(self, page: int = 2):
+    def iterator(self, page: int = 2) -> list:
+        start: int = 0
         while True:
-            data = list(self.data.values())[self.start: self.start+page]
+            data = list(self.data.values())[start: start+page]
             if not data:
                 break
-            yield data
-            self.start += page
+            yield [record.__str__() for record in data]
+            start += page
 
-    def search_by_keyword(self, parameter: str):
+    def search_by_keyword(self, parameter: str) -> Record | str:
         for record in self.data.values():
             if record.search(parameter):
                 return record
-        return 'There are not matches...'
+        raise SearchException(parameter)
 
-    def search_by_name(self, name) -> list:
+    def search_by_name(self, name) -> str:
         # return [key if re.search(name, key, flags=re.I) else NameNotExistException(name) for key in self.data]
         for key in self.data:
             if re.search(name, key, flags=re.I):
@@ -403,12 +334,12 @@ class AddressBook(UserDict):
 
 
 contacts = AddressBook()
-
+'''
 p = Name('I')
 p.set_value('OK')
 print(p.get_value())
 n = Note('ok_')
-print(n)
+print(n.give_info())
 # p1 = Name('')
 
 number = Phone('')
@@ -449,7 +380,7 @@ print(contacts.search_by_keyword('tes'))
 for raw in contacts.info():
     print(raw)
 
-'''lst = [2, 3, 4, 5, 2, 6, 3, 9, 10, 11, 2]
+lst = [2, 3, 4, 5, 2, 6, 3, 9, 10, 11, 2]
 counts = Counter(lst)
 origin = [key for key in counts if counts[key] == 1]
 print(origin)
