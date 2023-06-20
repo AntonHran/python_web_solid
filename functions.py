@@ -15,7 +15,7 @@ def input_error(func):
             return func(args) if args else func()
         except (KeyError, ValueError, IndexError, TypeError) as error:
             print(f'''Error: {error}. Please check the accordance of the entered data to the requirements.
-                  f'And also a correctness of the entered name or/and phone number. And, of course, their existence.''')
+    And also a correctness of the entered name or/and phone number. And, of course, their existence.''')
         except Exception as exc:
             print(exc)
     return inner_func
