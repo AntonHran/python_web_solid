@@ -234,5 +234,5 @@ def address_book_main():
             print('I do not understand what you want to do. Please look at the commands.')
 
 
-if __name__ == '__main__':
-    pass
+'''if __name__ == '__main__':
+    pass'''
