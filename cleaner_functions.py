@@ -61,7 +61,7 @@ async def move_to_other(old_path: str, new_path: str, file_name: str, ext: str) 
 
 
 def rename(file_name: str) -> str:
-    pattern = r'[\w\.\-\(\)]'
+    pattern = r'[a-zA-Z0-9\.\-\(\)]'
     for char in file_name:
         if not re.match(pattern, char):
             if ord(unicodedata.normalize('NFC', char.lower())) in table.keys():
@@ -115,10 +115,18 @@ async def make_directions(path: str) -> None:
         print('Something went wrong. Check a validity of the entered path.')
 
 
+def instructions() -> None:
+    print('''\tNow you are in the cleaning module. In this module I help you to sort all files in the chosen directory 
+    thus cleaning your folder.
+    To do that, type the path to your folder according the pattern: <DISC:\\Folder\\Other folder...>
+    To back to main menu, type: <back>''')
+
+
 async def clean_folder_main():
+    instructions()
     global root
     while True:
-        root = input('Type a path to a folder to clean: ')
+        root = input('\nType a path to a folder to clean: ')
         if root == 'back':
             break
         await make_directions(root)
@@ -126,7 +134,7 @@ async def clean_folder_main():
         await after_check(root)
 
 
-asyncio.run(clean_folder_main())
+# asyncio.run(clean_folder_main())
 
 '''for key, val in extensions.items():
         if extension in val:
