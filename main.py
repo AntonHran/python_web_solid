@@ -1,18 +1,14 @@
-from functions import greeting, instructions, command_parser, handler
+from functions import address_book_main
+from cleaner_functions import clean_folder_main
+from game import game_main
+import asyncio
 
-
-def main():
-    greeting()
-    instructions()
-    while True:
-        text: str = input('\nEnter your command: ')
-        try:
-            command, argument = command_parser(text)
-            func = handler(command)
-            func(argument) if argument else func()
-        except (TypeError, KeyError):
-            print('I do not understand what you want to do. Please look at the commands.')
-
+main_ = {1: address_book_main, 2: clean_folder_main, 3: game_main, }
 
 if __name__ == '__main__':
-    main()
+    while True:
+        choice = int(input('Please make your choice: '))
+        if choice == 0:
+            print('Good bye)')
+            break
+        main_[choice]() if choice != 2 else asyncio.run(main_[choice]())
