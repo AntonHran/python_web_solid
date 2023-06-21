@@ -65,12 +65,3 @@ table = {ord(unicodedata.normalize('NFC', 'а')): 'a',
          ord(unicodedata.normalize('NFC', 'Щ')): 'Shch',
          ord(unicodedata.normalize('NFC', 'Ю')): 'Yu',
          ord(unicodedata.normalize('NFC', 'Я')): 'Ya'}
-
-
-extensions = dict(images=('jpeg', 'png', 'jpg', 'svg'),
-                  video=('avi', 'mp4', 'mov', 'mkv'),
-                  documents=('doc', 'docx', 'txt', 'pdf', 'xlsx', 'pptx'),
-                  audio=('mp3', 'ogg', 'wav', 'amr'),
-                  web=('html', 'xml', 'csv', 'json'),
-                  archive=('zip', 'rar', 'gz', 'tar'),
-                  other=())
