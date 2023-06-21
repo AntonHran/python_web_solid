@@ -1,11 +1,8 @@
 import re
 from classes import AddressBook, Record, Name, contacts
 import pickle
-import sys
 from typing import Callable
 from functools import wraps
-
-from cleaner_functions import make_dir, sort_files, check
 
 
 def input_error(func):
@@ -41,6 +38,7 @@ def add_contact(name: str) -> None:
     name: Name = Name(name)
     record: Record = Record(name)
     contacts.add_record(record)
+    write_info_from_class(contacts)
 
 
 @input_error
@@ -48,6 +46,7 @@ def delete_contact(name: str) -> None:
     """
     To delete some contact, type: delete contact <name of a contact>"""
     contacts.delete_record(name)
+    write_info_from_class(contacts)
 
 
 @input_error
@@ -61,7 +60,8 @@ def search(keyword: str) -> None:
 def show_contacts() -> None:
     """
     To show all notices of an address book, type: show all"""
-    for record in contacts.iterator():
+    contacts_download = read_info_from_file()
+    for record in contacts_download.iterator():
         print(' ||| '.join(record))
         input('Press "Enter": ')
 
@@ -84,6 +84,7 @@ def change_name(name: str) -> None:
     new_name: str = input('Please enter a new name for the contact: ')
     contact_data.name.set_value(new_name)
     contacts.add_record(contact_data)
+    write_info_from_class(contacts)
 
 
 @input_error
@@ -99,6 +100,7 @@ def add_phone_number(name: str) -> None:
     number: str = input('Please enter a phone number according to a phone pattern: +<code of a country>XXXXXXXXX '
                         'or <operator code>XXXXXXX: ')
     contacts.data[name].phone.set_value(number)
+    write_info_from_class(contacts)
 
 
 @input_error
@@ -108,6 +110,7 @@ def delete_phone_number(name: str) -> None:
     name = contacts.search_by_name(name)
     number: str = input('Please enter a number to delete: ')
     contacts.data[name].phone.delete_phone_number(number)
+    write_info_from_class(contacts)
 
 
 @input_error
@@ -119,6 +122,7 @@ def change_phone_number(name: str) -> None:
     old, new = phone_num.strip().split('-')
     contacts.data[name].phone.delete_phone_number(old)
     contacts.data[name].phone.set_value(new)
+    write_info_from_class(contacts)
 
 
 @input_error
@@ -130,6 +134,7 @@ def change_email(name: str) -> None:
     name = contacts.search_by_name(name)
     email: str = input('Please enter an email for the contact: ')
     contacts.data[name].email.set_value(email)
+    write_info_from_class(contacts)
 
 
 @input_error
@@ -142,6 +147,7 @@ def change_birthdate(name: str) -> None:
     name = contacts.search_by_name(name)
     birthdate: str = input('Please enter a date of birth for the contact according to pattern YYYY-MM-DD: ')
     contacts.data[name].bd.set_value(birthdate)
+    write_info_from_class(contacts)
 
 
 @input_error
@@ -163,6 +169,7 @@ def change_status(name: str) -> None:
     status: str = input('Please enter one of statuses to this contact: '
                         'Friend, Family, Co-Worker, Special. Or leave it empty: ')
     contacts.data[name].status.set_value(status)
+    write_info_from_class(contacts)
 
 
 @input_error
@@ -174,10 +181,11 @@ def add_note(name: str) -> None:
     name = contacts.search_by_name(name)
     note: str = input('Please enter a note for the contact: ')
     contacts.data[name].note.set_value(note)
+    write_info_from_class(contacts)
 
 
 def greeting():
-    print('Welcome to the CUI personal assistant.\n'
+    print('Now you are in your personal addressbook.\n'
           'I can help you with adding, changing, showing and storing all contacts and data connected with them.')
     try:
         [contacts.add_record(value) for value in read_info_from_file().values()]
@@ -187,27 +195,17 @@ def greeting():
 
 def farewell() -> None:
     """
-    To exit and shut down the CUI assistant, type: bye
+    To exit the addressbook and come back to the main menu, type: back
     """
     write_info_from_class(contacts)
-    print('Good bye!')
-    sys.exit()
-
-
-def clean_folder() -> None:
-    """
-    To clean a folder by sorting all files are in, type: clean folder"""
-    path: str = input('Please enter a path to a folder is requiring to be cleaned: ')
-    if make_dir(path):
-        sort_files(path, path)
-        check(path)
+    print('All changes saved successfully.')
 
 
 methods = {'add contact': add_contact, 'delete contact': delete_contact, 'search': search,
            'show all': show_contacts, 'change name': change_name, 'add phone': add_phone_number,
            'change phone': change_phone_number, 'delete phone': delete_phone_number, 'change email': change_email,
            'change bd': change_birthdate, 'days to bd': days_to_birthday, 'change status': change_status,
-           'add note': add_note, 'help': instructions, 'clean folder': clean_folder, 'bye': farewell}
+           'add note': add_note, 'help': instructions, }
 
 
 @input_error
@@ -219,3 +217,22 @@ def command_parser(command: str) -> tuple:
 
 def handler(function_name: str) -> type[Callable]:
     return methods[function_name]
+
+
+def address_book_main():
+    greeting()
+    instructions()
+    while True:
+        text: str = input('\nEnter your command: ')
+        if text == 'back':
+            break
+        try:
+            command, argument = command_parser(text)
+            func = handler(command)
+            func(argument) if argument else func()
+        except (TypeError, KeyError):
+            print('I do not understand what you want to do. Please look at the commands.')
+
+
+if __name__ == '__main__':
+    pass
