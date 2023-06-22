@@ -1,17 +1,30 @@
 import random
 import re
+import requests
 from illustration_to_game import draw
 
 
-def choose() -> tuple:
+'''def choose() -> tuple:
     word_list: list = ['python', 'java', 'swift', 'javascript', 'ruby', 'html', 'php']
     word: str = random.choice(word_list)
     gues_word: str = '-' * len(word)
-    return word, gues_word
+    return word, gues_word'''
+
+
+def get_words_list() -> list:
+    response = requests.get('https://www.mit.edu/~ecprice/wordlist.10000', timeout=10)
+    string_words: str = response.content.decode('utf-8')
+    list_words: list = string_words.splitlines()
+    return list_words
+
+
+words: list = get_words_list()
 
 
 def game() -> tuple:
-    word, gues_word = choose()
+    # word, gues_word = choose()
+    word: str = random.choice(words)
+    gues_word: str = '-' * len(word)
     i: int = 0
     entered_letters: str = ''
     while i < 8 and gues_word != word:
@@ -35,7 +48,7 @@ def game() -> tuple:
 def result(word: str, guested_word: str) -> tuple:
     win, lose = 0, 0
     if word != guested_word:
-        print('\nYou lost!')
+        print(f'\nYou lost! The word was {word}')
         lose = 1
     else:
         print(f'\nYou guessed the word: {word}! \nYou survived!')
