@@ -2,6 +2,7 @@ import asyncio
 import aiofiles
 import aiofiles.os
 import aioshutil
+from aiopath import AsyncPath
 
 import os
 import re
@@ -12,21 +13,27 @@ from typing import Tuple, Callable
 root = ''
 
 
-async def process_directory(directory):
-    for file in os.listdir(directory):
-        file_path = os.path.join(directory, file)
+async def process_directory(directory) -> None:
+    async for path in AsyncPath(directory).iterdir():
+        if await path.is_file():
+            await process_file(directory, path.name)
+        elif await path.is_dir() and path.name.lower() not in extensions.keys():
+            await process_directory(path)
+
+    '''for file in os.listdir(directory):
+        file_path: str = os.path.join(directory, file)
         if await aiofiles.os.path.isfile(file_path):
             await process_file(directory, file)
         elif await aiofiles.os.path.isdir(file_path) and file.lower() not in extensions.keys():
-            await process_directory(file_path)
+            await process_directory(file_path)'''
 
 
-async def process_file(file_path, file):
+async def process_file(file_path, file) -> None:
     name, extension = file.rsplit('.', 1)
-    func_ = handle_func(extension)
-    await func_[0](file_path, f'{root}\\{func_[1]}', name, extension)  # !!!!! old path
+    func_: tuple = handle_func(extension)
+    await func_[0](file_path, f'{root}\\{func_[1]}', name, extension)
     await check_folder(file_path)
-    await asyncio.sleep(0.01)
+    await asyncio.sleep(0.001)
 
 
 async def move_to(old_path: str, new_path: str, file_name: str, ext: str) -> None:
@@ -106,7 +113,7 @@ def get_folder_size(folder_path: str) -> int:
     return total_size
 
 
-async def make_directions(path: str) -> None:
+async def make_directories(path: str) -> None:
     if await aiofiles.os.path.exists(path):
         for key in extensions:
             await aiofiles.os.makedirs('\\'.join((path, key.title())), exist_ok=True)
@@ -116,20 +123,21 @@ async def make_directions(path: str) -> None:
 
 
 def instructions() -> None:
-    print('''\tNow you are in the cleaning module. In this module I help you to sort all files in the chosen directory 
-    thus cleaning your folder.
+    print('''\n\tNow you are in the cleaning module. In this module I help you to sort all files 
+    in the chosen directory thus cleaning your folder.
     To do that, type the path to your folder according the pattern: <DISC:\\Folder\\Other folder...>
     To back to main menu, type: <back>''')
 
 
-async def clean_folder_main():
+async def clean_folder_main() -> None:
     instructions()
     global root
     while True:
         root = input('\nType a path to a folder to clean: ')
         if root == 'back':
+            print('\nYou returned to the main Menu.')
             break
-        await make_directions(root)
+        await make_directories(root)
         await process_directory(root)
         await after_check(root)
 
