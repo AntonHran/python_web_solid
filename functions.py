@@ -62,13 +62,13 @@ def show_contacts() -> None:
     To show all notices of an address book, type: show all"""
     contacts_download = read_info_from_file()
     for record in contacts_download.iterator():
-        print(' ||| '.join(record))
+        print('\n'.join(record))
         input('Press "Enter": ')
 
 
 def instructions() -> None:
-    print('General commands for all written contacts:\n'
-          'Names, phone numbers, emails and other parameters have to be written without brackets <...>')
+    print('\n\tGeneral commands for all written contacts:\n'
+          '\tNames, phone numbers, emails and other parameters have to be written without brackets <...>')
     for command in methods.values():
         if command.__doc__:
             print(command.__doc__)
@@ -184,11 +184,14 @@ def add_note(name: str) -> None:
     write_info_from_class(contacts)
 
 
-def greeting():
-    print('Now you are in your personal addressbook.\n'
-          'I can help you with adding, changing, showing and storing all contacts and data connected with them.')
+def greeting(object_: AddressBook):
+
+    print('\n\tNow you are in your personal addressbook.\n'
+          '\tI can help you with adding, changing, showing and storing all contacts and data connected with them.')
     try:
+        object_.data.clear()
         [contacts.add_record(value) for value in read_info_from_file().values()]
+        # contacts = read_info_from_file()
     except (FileExistsError, FileNotFoundError):
         print('There are not records yet. Your addressbook is empty.')
 
@@ -198,7 +201,8 @@ def farewell() -> None:
     To exit the addressbook and come back to the main menu, type: back
     """
     write_info_from_class(contacts)
-    print('All changes saved successfully.')
+    print('All changes saved successfully.\n'
+          '\nYou returned to the main Menu.')
 
 
 methods = {'add contact': add_contact, 'delete contact': delete_contact, 'search': search,
@@ -220,11 +224,12 @@ def handler(function_name: str) -> type[Callable]:
 
 
 def address_book_main():
-    greeting()
+    greeting(contacts)
     instructions()
     while True:
         text: str = input('\nEnter your command: ')
         if text == 'back':
+            farewell()
             break
         try:
             command, argument = command_parser(text)
