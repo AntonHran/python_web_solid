@@ -12,10 +12,10 @@ if __name__ == '__main__':
     2. cleaning block where I can sort your files and 
     3. gaming block for a bit of entertainment.\n
     To choice the block, just enter its number 1, 2 or 3 in the offered field.\n
-    To close the personal assistant, enter 0\n''')
+    To close the personal assistant, enter 0''')
     while True:
-        choice = int(input('Please make your choice: '))
+        choice = int(input('\nPlease make your choice: '))
         if choice == 0:
-            print('Good bye)')
+            print('\nGood bye)')
             break
         main_[choice]() if choice != 2 else asyncio.run(main_[choice]())
