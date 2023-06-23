@@ -10,11 +10,11 @@ def input_error(func):
     def inner_func(args):
         try:
             return func(args) if args else func()
-        except (KeyError, ValueError, IndexError, TypeError) as error:
-            print(f'''Error: {error}. Please check the accordance of the entered data to the requirements.
-    And also a correctness of the entered name or/and phone number. And, of course, their existence.''')
         except Exception as exc:
             print(exc)
+        except (KeyError, ValueError, IndexError, TypeError) as error:
+            print(f'''Error: {error}. Please check the accordance of the entered data to the requirements.
+And also a correctness of the entered name or/and phone number. And, of course, their existence.''')
     return inner_func
 
 
@@ -54,7 +54,8 @@ def search(keyword: str) -> None:
     """
     To search a contact by a name or a phone or an email a date of birth or a status either a note,
     using a full value of the field name or only a part of it, type: search <keyword>"""
-    print(contacts.search_by_keyword(keyword))
+    result: list = contacts.search_by_keyword(keyword)
+    [print(res) for res in result]
 
 
 def show_contacts() -> None:
@@ -237,7 +238,3 @@ def address_book_main():
             func(argument) if argument else func()
         except (TypeError, KeyError):
             print('I do not understand what you want to do. Please look at the commands.')
-
-
-'''if __name__ == '__main__':
-    pass'''
