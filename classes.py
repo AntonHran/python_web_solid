@@ -8,7 +8,7 @@ from typing import Any, List
 UKR_MOBILE_PHONE_CODES = ['095', '099', '050', '063', '066', '067', '077', '0800', '045', '046', '032',
                           '044', '048', '068', '097', '098', '091', '092', '094', ]
 
-#
+
 class NameNotFilledException(Exception):
     def __init__(self, message='Name can not be missing/empty.') -> None:
         self.message = message
