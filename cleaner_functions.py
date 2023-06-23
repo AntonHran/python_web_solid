@@ -140,16 +140,3 @@ async def clean_folder_main() -> None:
         await make_directories(root)
         await process_directory(root)
         await after_check(root)
-
-
-# asyncio.run(clean_folder_main())
-
-'''for key, val in extensions.items():
-        if extension in val:
-            await move_to(old_path=current_path, new_path=f'{root}\\{key.title()}', file_name='.'.join(name),
-                          ext=extension)
-            await check_folder(current_path)
-            break
-            
-D:\\GOIT\\trash
-'''
