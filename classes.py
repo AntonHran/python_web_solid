@@ -1,4 +1,4 @@
-from collections import UserDict  # , Counter
+from collections import UserDict
 import re
 from abc import ABC, abstractmethod
 import datetime
