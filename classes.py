@@ -3,7 +3,7 @@ import re
 from abc import ABC, abstractmethod
 import datetime
 
-from typing import Any
+from typing import Any, List
 
 UKR_MOBILE_PHONE_CODES = ['095', '099', '050', '063', '066', '067', '077', '0800', '045', '046', '032',
                           '044', '048', '068', '097', '098', '091', '092', '094', ]
@@ -132,7 +132,7 @@ class Name(Field):
             self.__name = _value
 
     def _check_value(self, name: str) -> str | Exception:
-        if name and isinstance(name, str):
+        if name and isinstance(name, str) and len(name) > 1:
             return name
         else:
             raise NameNotFilledException
@@ -148,7 +148,7 @@ class Phone(Field):
     def get_value(self) -> list[str]:
         return self.__phone_number
 
-    def _check_value(self, phone_num) -> str | None | Exception:
+    def _check_value(self, phone_num: str) -> str | None:
         if phone_num:
             phone_num = re.sub(r'[+\-() ]', '', phone_num)
             if re.fullmatch(r'^([0-9]){6,14}[0-9]$', phone_num):
@@ -168,7 +168,7 @@ class Phone(Field):
         else:
             raise PhoneExistException(_number)
 
-    def delete_phone_number(self, phone_number):
+    def delete_phone_number(self, phone_number: str) -> None:
         number_find = [num for num in self.__phone_number if re.search(phone_number, num)]
         if number_find:
             self.__phone_number.remove(*number_find)
@@ -186,7 +186,7 @@ class Email(Field):
     def set_value(self, new_email: str) -> None:
         self.__email = self._check_value(new_email)
 
-    def _check_value(self, email: str) -> str | None | Exception:
+    def _check_value(self, email: str) -> str | None:
         if email and re.match(r"([a-zA-Z.]+\w+\.?)+(@\w{2,}\.)(\w{2,})", email):
             return email
         elif not email:
@@ -226,8 +226,8 @@ class BirthDay(Field):
                                                     day=self.__birth_date.day)
             diff: int = (birthday - current_date).days
             if diff < 0:
-                birthday = datetime.date(year=current_date.year + 1, month=self.__birth_date.month,
-                                         day=self.__birth_date.day)
+                birthday: datetime.date = datetime.date(year=current_date.year + 1, month=self.__birth_date.month,
+                                                        day=self.__birth_date.day)
                 diff = (birthday - current_date).days
             return diff
         raise BirthdayNotExistException
@@ -245,7 +245,7 @@ class Status(Field):
     def set_value(self, new_status: str) -> None:
         self.__status = self._check_value(new_status)
 
-    def _check_value(self, status):
+    def _check_value(self, status: str) -> str:
         if status in self.statuses:
             return status
         raise StatusNotExistException(status)
@@ -258,7 +258,7 @@ class Note(UnnecessaryField):
     def get_value(self) -> str:
         return self._note
 
-    def set_value(self, new_note: str):
+    def set_value(self, new_note: str) -> None:
         self._note = new_note
 
 
@@ -317,14 +317,14 @@ class AddressBook(UserDict):
             yield [record.__str__() for record in data]
             start += page
 
-    def search_by_keyword(self, parameter: str) -> Record | str:
+    def search_by_keyword(self, parameter: str) -> List[Record] | str:
+        res = []
         for record in self.data.values():
             if record.search(parameter):
-                return record
-        raise SearchException(parameter)
+                res.append(record)
+        return res if res else SearchException(parameter)
 
     def search_by_name(self, name) -> str:
-        # return [key if re.search(name, key, flags=re.I) else NameNotExistException(name) for key in self.data]
         for key in self.data:
             if re.search(name, key, flags=re.I):
                 return key
@@ -335,70 +335,3 @@ class AddressBook(UserDict):
 
 
 contacts = AddressBook()
-'''
-p = Name('I')
-p.set_value('OK')
-print(p.get_value())
-n = Note('ok_')
-p1 = Name('')
-
-number = Phone('')
-print(number.get_value())
-eml = Email()
-print(eml.get_value())
-rec_ = Record(Name('Anton'), bd=BirthDay('1990-01-06'), status=Status('Friend'), note=Note('myself'))
-print(rec_, 1)
-print(rec_.search('ant'))
-print('-' * 120)
-
-rec_.note.set_value('it is me)')
-print(rec_, 1)
-rec = Record(p)
-print(rec, 2)
-rec.note.set_value('test')
-print(rec, 2)
-rec_.email.set_value('ah.hr@gmail.com')
-print(rec_.email.get_value())
-print(rec_, 1)
-rec.status.set_value('Special')
-print(rec, 2, '\n')
-
-contacts.add_record(rec)
-contacts.add_record(rec_)
-print(contacts['Anton'].bd.days_to_birthday())
-# print(contacts['OK'].bd.days_to_birthday())
-# contacts.delete_record('OK')
-for key_, val in contacts.items():
-    print(key_, '|', val)
-print()
-for el in contacts.iterator():
-    print(*el)
-
-print('-' * 120)
-print(contacts.search_by_keyword('tes'))
-
-for raw in contacts.info():
-    print(raw)
-
-lst = [2, 3, 4, 5, 2, 6, 3, 9, 10, 11, 2]
-counts = Counter(lst)
-origin = [key for key in counts if counts[key] == 1]
-print(origin)
-
-orig = []
-for el in lst:
-    copy = [*lst]
-    copy.remove(el)
-    if el not in copy:
-        orig.append(el)
-print(orig)
-
-org = []
-for el in lst:
-    k = 0
-    for el_1 in lst:
-        if el == el_1:
-            k += 1
-    if k == 1:
-        org.append(el)
-print(org)'''
