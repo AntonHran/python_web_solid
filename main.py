@@ -6,7 +6,7 @@ import asyncio
 
 def main_instructions() -> None:
     print('''\n\t1. addressbook with your contacts, 
-    2. cleaning block where I can sort your files and 
+    2. cleaning block where I can sort your files and thus clean your folder,
     3. gaming block for a bit of entertainment.\n
     To choice the block, just enter its number 1, 2 or 3 in the offered field.\n
     To see instructions of main menu, type 4.
