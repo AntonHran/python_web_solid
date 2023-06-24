@@ -402,31 +402,3 @@ class AddressBook(UserDict):
 contacts = AddressBook()
 output_ = Output()
 commands_addressbook = TerminalView()
-
-
-'''name_ = Name('Tony')
-record_ = Record(name_)
-record_.phone.set_value('0957010291')
-record_.email.set_value('an.hr@gmail.com')
-record_.note.set_value('it is me)')
-record_.display(output_)
-
-contacts.add_record(record_)
-print()
-results = contacts.search_by_keyword('Ton')
-[res.display(output_) for res in results]
-print()
-for field in contacts.iterator(2):
-    # field.display(output_)
-    print(field)
-    for f in field:
-        f.display(output_)
-
-record_.display_field('note', output_)'''
-
-# vars(self) -> {'name': <__main__.Name object at 0x000002234D904B50>,
-# 'phone': <__main__.Phone object at 0x000002234D904BD0>,
-# 'email': <__main__.Email object at 0x000002234D904C10>,
-# 'bd': <__main__.BirthDay object at 0x000002234D904C50>,
-# 'status': <__main__.Status object at 0x000002234D904C90>,
-# 'note': <__main__.Note object at 0x000002234D904CD0>}
