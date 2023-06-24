@@ -93,6 +93,18 @@ class RecordNotExistException(Exception):
         super().__init__(self.message)
 
 
+class FieldNotExistException(Exception):
+    def __init__(self, field_for_verification: str) -> None:
+        self.message = f'A such field: {field_for_verification} does not exist.'
+        super().__init__(self.message)
+
+
+class TerminalPrint(ABC):
+    @abstractmethod
+    def display(self, text: str) -> None:
+        raise NotImplementedError
+
+
 class Field(ABC):
     @abstractmethod
     def get_value(self):
@@ -106,6 +118,10 @@ class Field(ABC):
     def _check_value(self, value):
         raise NotImplementedError
 
+    @abstractmethod
+    def display(self, output: TerminalPrint) -> None:
+        raise NotImplementedError
+
 
 class UnnecessaryField(ABC):
     @abstractmethod
@@ -115,6 +131,36 @@ class UnnecessaryField(ABC):
     @abstractmethod
     def set_value(self, value):
         raise NotImplementedError
+
+    @abstractmethod
+    def display(self, output: TerminalPrint) -> None:
+        raise NotImplementedError
+
+
+class Output(TerminalPrint):
+    def display(self, text: str) -> None:
+        print(text)
+
+
+class View(ABC):
+    @abstractmethod
+    def add_command(self, command):
+        pass
+
+    @abstractmethod
+    def display_commands(self):
+        pass
+
+
+class TerminalView(View):
+    def __init__(self):
+        self.commands = []
+
+    def add_command(self, command: str) -> None:
+        self.commands.append(command)
+
+    def display_commands(self) -> list:
+        return self.commands
 
 
 class Name(Field):
@@ -136,6 +182,9 @@ class Name(Field):
             return name
         else:
             raise NameNotFilledException
+
+    def display(self, output: TerminalPrint) -> None:
+        output.display(f'Name: {self.__name}')
 
 
 class Phone(Field):
@@ -174,6 +223,9 @@ class Phone(Field):
             self.__phone_number.remove(*number_find)
         raise PhoneNotExistException(phone_number)
 
+    def display(self, output: TerminalPrint) -> None:
+        output.display(f'Phone number(-s): {self.__phone_number}')
+
 
 class Email(Field):
     def __init__(self, email: str = None) -> None:
@@ -193,6 +245,9 @@ class Email(Field):
             return None
         else:
             raise ValidEmailException(email)
+
+    def display(self, output: TerminalPrint) -> None:
+        output.display(f'Email: {self.__email}')
 
 
 class BirthDay(Field):
@@ -232,6 +287,9 @@ class BirthDay(Field):
             return diff
         raise BirthdayNotExistException
 
+    def display(self, output: TerminalPrint) -> None:
+        output.display(f'Birthday: {self.__birth_date.strftime("%A %d %B %Y") if self.__birth_date else None}')
+
 
 class Status(Field):
     def __init__(self, status: str = None):
@@ -250,6 +308,9 @@ class Status(Field):
             return status
         raise StatusNotExistException(status)
 
+    def display(self, output: TerminalPrint) -> None:
+        output.display(f'Status: {self.__status}')
+
 
 class Note(UnnecessaryField):
     def __init__(self, note: str = None):
@@ -261,6 +322,9 @@ class Note(UnnecessaryField):
     def set_value(self, new_note: str) -> None:
         self._note = new_note
 
+    def display(self, output: TerminalPrint) -> None:
+        output.display(f'Note: {self._note}')
+
 
 class Record:
     def __init__(self, name: Field, phone: Field = None, email: Field = None,
@@ -271,9 +335,6 @@ class Record:
         self.bd = BirthDay() if not bd else bd
         self.status = Status() if not status else status
         self.note = Note() if not note else note
-
-    def __str__(self) -> str:
-        return ', '.join([f'{name}: {value.get_value()}' for name, value in vars(self).items()])
 
     def _get_fields(self) -> dict:
         fields_dict: dict = {name: value.get_value() for (name, value) in vars(self).items()}
@@ -294,6 +355,13 @@ class Record:
             if value and re.search(parameter, self._parser(value), flags=re.I):
                 return value
 
+    def display(self, output: TerminalPrint) -> None:
+        for field in vars(self).values():
+            field.display(output)
+
+    def display_field(self, field_name: str, output: TerminalPrint) -> None | Exception:
+        return vars(self)[field_name].display(output) if field_name in vars(self).keys() else FieldNotExistException
+
 
 class AddressBook(UserDict):
 
@@ -308,13 +376,13 @@ class AddressBook(UserDict):
             raise RecordNotExistException(name)
         del self.data[name]
 
-    def iterator(self, page: int = 2) -> list:
+    def iterator(self, page: int) -> list:
         start: int = 0
         while True:
             data = list(self.data.values())[start: start+page]
             if not data:
                 break
-            yield [record.__str__() for record in data]
+            yield data
             start += page
 
     def search_by_keyword(self, parameter: str) -> List[Record] | str:
@@ -330,8 +398,35 @@ class AddressBook(UserDict):
                 return key
         raise NameNotExistException(name)
 
-    def __str__(self) -> dict:
-        return self.data
-
 
 contacts = AddressBook()
+output_ = Output()
+commands_addressbook = TerminalView()
+
+
+'''name_ = Name('Tony')
+record_ = Record(name_)
+record_.phone.set_value('0957010291')
+record_.email.set_value('an.hr@gmail.com')
+record_.note.set_value('it is me)')
+record_.display(output_)
+
+contacts.add_record(record_)
+print()
+results = contacts.search_by_keyword('Ton')
+[res.display(output_) for res in results]
+print()
+for field in contacts.iterator(2):
+    # field.display(output_)
+    print(field)
+    for f in field:
+        f.display(output_)
+
+record_.display_field('note', output_)'''
+
+# vars(self) -> {'name': <__main__.Name object at 0x000002234D904B50>,
+# 'phone': <__main__.Phone object at 0x000002234D904BD0>,
+# 'email': <__main__.Email object at 0x000002234D904C10>,
+# 'bd': <__main__.BirthDay object at 0x000002234D904C50>,
+# 'status': <__main__.Status object at 0x000002234D904C90>,
+# 'note': <__main__.Note object at 0x000002234D904CD0>}
