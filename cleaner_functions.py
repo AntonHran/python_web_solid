@@ -9,7 +9,14 @@ import re
 import unicodedata
 from cleaner_consts import table
 from typing import Tuple, Callable
+from classes import TerminalView
 
+cleaner_commands = TerminalView()
+cleaner_commands_comm = '''\n\tNow you are in the cleaning module. In this module I help you to sort all files 
+    in the chosen directory thus cleaning your folder.
+    To do that, type the path to your folder according the pattern: <DISC:\\Folder\\Other folder...>
+    To back to main menu, type: <back>'''
+cleaner_commands.add_command(cleaner_commands_comm)
 root = ''
 
 
@@ -123,10 +130,8 @@ async def make_directories(path: str) -> None:
 
 
 def instructions() -> None:
-    print('''\n\tNow you are in the cleaning module. In this module I help you to sort all files 
-    in the chosen directory thus cleaning your folder.
-    To do that, type the path to your folder according the pattern: <DISC:\\Folder\\Other folder...>
-    To back to main menu, type: <back>''')
+    for command in cleaner_commands.display_commands():
+        print(command)
 
 
 async def clean_folder_main() -> None:
