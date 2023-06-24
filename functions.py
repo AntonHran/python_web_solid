@@ -1,7 +1,6 @@
 import re
 from classes import AddressBook, Record, Name, contacts, output_, commands_addressbook, TerminalView, TerminalPrint
 import pickle
-# from typing import Callable, Tuple
 from functools import wraps
 import collections
 
@@ -296,28 +295,19 @@ def handler(function_name: str) -> collections.namedtuple:  # Tuple[Callable, No
 def make_function(text: str) -> None:
     try:
         command, argument = command_parser(text)
-        print(command, '|', argument)
         func: collections.namedtuple = handler(command)
-        print(func)
-
         if argument and func.records and func.terminal_output:
-            print(1)
             func.function(argument, contacts, output_)
         elif argument and func.records and not func.terminal_output:
-            print(2)
             func.function(argument, contacts)
         elif argument and func.terminal_output and not func.records:
-            print(3)
             func.function(argument, output_)
         elif not argument and func.terminal_output and not func.records:
-            print(4)
             func.function(output_)
         elif not argument and func.terminal_commands and not func.records:
-            print(5)
             func.function(commands_addressbook)
 
-    except (TypeError, KeyError) as e:
-        print(e)
+    except (TypeError, KeyError):
         print('I do not understand what you want to do. Please look at the commands.')
 
 
@@ -330,7 +320,3 @@ def address_book_main():
             farewell(contacts)
             break
         make_function(text)
-
-
-'''add_contact('kjh', contacts)
-add_note('kjg', contacts)'''
