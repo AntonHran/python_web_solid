@@ -2,6 +2,13 @@ import random
 import re
 import requests
 from illustration_to_game import draw
+from classes import TerminalView
+
+game_commands = TerminalView()
+game_commands_comm = '''
+    Type "play" to play the game, "score" to show the scoreboard, "help" to show instructions
+    and "back" to return to main menu.'''
+game_commands.add_command(game_commands_comm)
 
 
 '''def choose() -> tuple:
@@ -75,10 +82,15 @@ def check_enter(let: str) -> str:
         print('Please, input a single letter.')
 
 
+def instructions() -> None:
+    for command in game_commands.display_commands():
+        print(command)
+
+
 def game_main():
-    print('''\tH A N G M A N
-    This is entertainment module with a well known game - hangman. So are you ready gues a word?\n
-    Type "play" to play the game, "score" to show the scoreboard, and "back" to return to main menu.''')
+    print('''\n\tH A N G M A N
+    This is entertainment module with a well known game - hangman. So are you ready to gues a word?''')
+    instructions()
     win_total = 0
     lose_total = 0
     while True:
@@ -89,6 +101,10 @@ def game_main():
             lose_total += lose
         elif answer == 'score':
             print(f'\nYou won: {win_total} times.\nYou lost: {lose_total} times.')
+        elif answer == 'help':
+            instructions()
         elif answer == 'back':
             print('\nYou returned to the main Menu.')
             break
+        else:
+            print('I do not understand, please see instructions.')
